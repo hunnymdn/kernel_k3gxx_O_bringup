@@ -2147,9 +2147,6 @@ static int wm_adsp2_ena(struct wm_adsp *dsp)
 		ret = regmap_update_bits(dsp->regmap, dsp->base + ADSP2_CONTROL,
 				 ADSP2_SYS_ENA, ADSP2_SYS_ENA);
 
-		if (ret != 0)
-			return ret;
-
 		/* Wait for the RAM to start, should be near instantaneous */
 		for (count = 0; count < 10; ++count) {
 			ret = regmap_read(dsp->regmap, dsp->base + ADSP2_STATUS1,
