@@ -599,13 +599,8 @@ int usb_wwan_port_probe(struct usb_serial_port *port)
 	int err;
 	int i;
 
-	dev_info(&port->dev, "%s, %d, %d\n", __func__, port->serial->dev->actconfig->desc.bNumInterfaces,
-			port->serial->interface->cur_altsetting->desc.bInterfaceNumber);
-	if ((port->serial->dev->actconfig->desc.bNumInterfaces == 9) && 
-			(port->serial->interface->cur_altsetting->desc.bInterfaceNumber != 1))
+	if (!port->bulk_in_size || !port->bulk_out_size)
 		return -ENODEV;
-
-	dev_info(&port->dev, "%s\n", __func__);
 
 	portdata = kzalloc(sizeof(*portdata), GFP_KERNEL);
 	if (!portdata)
@@ -618,10 +613,7 @@ int usb_wwan_port_probe(struct usb_serial_port *port)
 	spin_lock_init(&portdata->in_lock);
 
 	for (i = 0; i < N_IN_URB; i++) {
-		if (!port->bulk_in_size)
-			break;
-
-		buffer = kmalloc(IN_BUFLEN, GFP_KERNEL);
+		buffer = (u8 *)__get_free_page(GFP_KERNEL);
 		if (!buffer)
 			goto bail_out_error;
 		portdata->in_buffer[i] = buffer;
@@ -634,9 +626,6 @@ int usb_wwan_port_probe(struct usb_serial_port *port)
 	}
 
 	for (i = 0; i < N_OUT_URB; i++) {
-		if (!port->bulk_out_size)
-			break;
-
 		buffer = kmalloc(OUT_BUFLEN, GFP_KERNEL);
 		if (!buffer)
 			goto bail_out_error2;
