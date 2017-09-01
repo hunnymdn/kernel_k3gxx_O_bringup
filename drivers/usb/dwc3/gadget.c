@@ -1785,7 +1785,7 @@ static int dwc3_gadget_pullup(struct usb_gadget *g, int is_on)
 }
 
 static irqreturn_t dwc3_interrupt(int irq, void *_dwc);
-//static irqreturn_t dwc3_thread_interrupt(int irq, void *_dwc);
+static irqreturn_t dwc3_thread_interrupt(int irq, void *_dwc);
 #ifdef CONFIG_USBIRQ_BALANCING_LTE_HIGHTP
 static int set_cpu_core_from_usb_irq(int enable)
 {
@@ -1843,9 +1843,11 @@ static int dwc3_gadget_start(struct usb_gadget *g,
 		struct usb_gadget_driver *driver)
 {
 	struct dwc3		*dwc = gadget_to_dwc(g);
-	unsigned long		flags;
+    struct  dwc3_ep *dep;
+    unsigned long		flags;
 	int			ret = 0;
 	int			irq;
+    u32         reg;
 
 	irq = platform_get_irq(to_platform_device(dwc->dev), 0);
 	ret = devm_request_irq(dwc->dev, irq, dwc3_interrupt,
@@ -2947,7 +2949,7 @@ static irqreturn_t dwc3_process_event_buf(struct dwc3 *dwc, u32 buf)
 #endif
 	return ret;
 }
-#if 0
+
 static irqreturn_t dwc3_thread_interrupt(int irq, void *_dwc)
 {
 	struct dwc3 *dwc = _dwc;
@@ -2988,7 +2990,7 @@ static irqreturn_t dwc3_check_event_buf(struct dwc3 *dwc, u32 buf)
 
 	return IRQ_WAKE_THREAD;
 }
-#endif
+
 
 static irqreturn_t dwc3_interrupt(int irq, void *_dwc)
 {

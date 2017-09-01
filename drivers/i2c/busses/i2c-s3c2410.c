@@ -1267,6 +1267,19 @@ static int s3c24xx_i2c_resume(struct device *dev)
 }
 #endif
 
+#ifdef CONFIG_PM_RUNTIME
+static int s3c24xx_i2c_runtime_resume(struct device *dev)
+{
+	struct platform_device *pdev = to_platform_device(dev);
+	struct s3c24xx_i2c *i2c = platform_get_drvdata(pdev);
+
+	if (i2c->quirks & QUIRK_FIMC_I2C)
+		i2c->need_hw_init = S3C2410_NEED_REG_INIT;
+
+	return 0;
+}
+#endif
+
 #ifdef CONFIG_PM
 static const struct dev_pm_ops s3c24xx_i2c_dev_pm_ops = {
 #ifdef CONFIG_PM_SLEEP

@@ -575,6 +575,7 @@ static int raw_sendmsg(struct kiocb *iocb, struct sock *sk, struct msghdr *msg,
 			    (inet->hdrincl ? FLOWI_FLAG_KNOWN_NH : 0),
 			   daddr, saddr, 0, 0);
 
+
 	if (!inet->hdrincl) {
 		err = raw_probe_proto_opt(&fl4, msg);
 		if (err)

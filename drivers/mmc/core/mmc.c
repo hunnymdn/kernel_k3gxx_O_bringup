@@ -302,9 +302,12 @@ static int mmc_read_ext_csd(struct mmc_card *card, u8 *ext_csd)
 	}
 
 	card->ext_csd.rev = ext_csd[EXT_CSD_REV];
-	if (card->ext_csd.rev > 7) /* Support beyond EXT_CSD revision device of JESD84-B50 */
-		pr_err("%s: EXT_CSD revision is over than 7 (%d)\n",
-				mmc_hostname(card->host), card->ext_csd.rev);
+	if (card->ext_csd.rev > 6) {
+		pr_err("%s: unrecognised EXT_CSD revision %d\n",
+			mmc_hostname(card->host), card->ext_csd.rev);
+		err = -EINVAL;
+		goto out;
+	}
 
 	card->ext_csd.raw_sectors[0] = ext_csd[EXT_CSD_SEC_CNT + 0];
 	card->ext_csd.raw_sectors[1] = ext_csd[EXT_CSD_SEC_CNT + 1];
@@ -556,61 +559,6 @@ static int mmc_read_ext_csd(struct mmc_card *card, u8 *ext_csd)
 			ext_csd[EXT_CSD_MAX_PACKED_READS];
 	} else {
 		card->ext_csd.data_sector_size = 512;
-	}
-
-	/* eMMC v5.0 or later */
-	if (card->ext_csd.rev >= 7) {
-		/* Enable CMDQ only when explicitly enabled at device tree */
-		/* CMDQ supporting eMMC device can be used though we don't */
-		/* use it */
-		if (card->host->caps2 & MMC_CAP2_CMDQ) {
-			card->ext_csd.cmdq_support =
-				ext_csd[EXT_CSD_CMDQ_SUPPORT];
-			if (card->ext_csd.cmdq_support) {
-				/* depth is 0~31 in spec. so +1 for 1~32 */
-				card->ext_csd.cmdq_depth =
-					ext_csd[EXT_CSD_CMDQ_DEPTH] + 1;
-				if (EMMC_MAX_QUEUE_DEPTH <
-						card->ext_csd.cmdq_depth)
-					card->ext_csd.cmdq_depth =
-						EMMC_MAX_QUEUE_DEPTH;
-				card->ext_csd.qrdy_support =
-					ext_csd[EXT_CSD_QRDY_SUPPORT];
-				card->ext_csd.qrdy_function =
-					ext_csd[EXT_CSD_CMDQ_QRDY_FUNCTION];
-			}
-		}
-		if (card->cid.manfid == 0x15 &&
-				ext_csd[EXT_CSD_PRE_EOL_INFO] == 0x0 &&
-				ext_csd[EXT_CSD_DEVICE_VERSION] == 0x0) {
-			/* eMMC : moviNAND VMX device Only */
-			card->ext_csd.smart_info = mmc_merge_ext_csd(ext_csd, false, 8,
-					EXT_CSD_PREv5_LIFE_TIME_EST,
-					EXT_CSD_PREv5_LIFE_TIME_EST,
-					EXT_CSD_PREv5_PRE_EOL_INFO,
-					EXT_CSD_PREv5_OPT_ERASE_SIZE,
-					EXT_CSD_PREv5_OPT_WRITE_SIZE,
-					EXT_CSD_PREv5_CTRL_VERSION,
-					EXT_CSD_HC_ERASE_GRP_SIZE,
-					EXT_CSD_HC_WP_GRP_SIZE);
-			card->ext_csd.fwdate = mmc_merge_ext_csd(ext_csd, false, 1,
-					EXT_CSD_PREv5_FIRMWARE_VERSION);
-		} else {
-			card->ext_csd.smart_info = mmc_merge_ext_csd(ext_csd, false, 8,
-					EXT_CSD_DEVICE_LIFE_TIME_EST_TYPE_B,
-					EXT_CSD_DEVICE_LIFE_TIME_EST_TYPE_A,
-					EXT_CSD_PRE_EOL_INFO,
-					EXT_CSD_OPTIMAL_TRIM_UNIT_SIZE,
-					EXT_CSD_DEVICE_VERSION + 1,
-					EXT_CSD_DEVICE_VERSION,
-					EXT_CSD_HC_ERASE_GRP_SIZE,
-					EXT_CSD_HC_WP_GRP_SIZE);
-			card->ext_csd.fwdate = mmc_merge_ext_csd(ext_csd, true, 8,
-					EXT_CSD_FIRMWARE_VERSION);
-		}
-
-		card->ext_csd.enhanced_strobe_support =
-			ext_csd[EXT_CSD_STORBE_SUPPORT];
 	}
 
 out:
